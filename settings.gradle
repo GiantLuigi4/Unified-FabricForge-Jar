@@ -10,6 +10,9 @@ pluginManagement {
 }
 rootProject.name = 'fabric'
 
+//this should be bottom up order in terms of overwrite
+//fabric over forge because of META-INF/MANIFEST.MF
+//root project is always top in this setup meaning everything overwrites it
 include(
         ":forge"
 )

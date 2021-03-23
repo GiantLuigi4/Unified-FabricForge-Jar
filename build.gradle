@@ -25,6 +25,8 @@ dependencies {
     modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
     modImplementation 'com.github.Virtuoel:Pehkui:26be808'
 
+    //if you have a common module, it'd go here
+    //implementation ':Common'
 
     // PSA: Some older mods, compiled on Loom 0.2.1, might have outdated Maven POMs.
     // You may need to force-disable transitiveness on them.
@@ -83,30 +85,34 @@ publishing {
     }
 }
 
-task setupFinalized() {
-    doFirst {
-        subprojects.forEach({project ->
-            build.finalizedBy(project.name + ':build')
-        })
-    }
-}
+//Automates building of all loader specific jars (includes common if you have that)
+//took reference from: <https://github.com/ReMod-Studios/yarn-and-needles/blob/3277a6a313b1dd7706408cba425d346b47cf3ea8/build.gradle.kts#L5-L10>
+subprojects.forEach({project ->
+    build.finalizedBy(project.name + ':build')
+})
 
 build.finalizedBy('uniformJar')
 
+//Merging tasking
 task uniformJar() {
     doLast {
-        String name = "build/libs/" + archivesBaseName
+        String name = "/libs/" + archivesBaseName
         if (version != "null") {
             name += "-" + version;
         }
         ArrayList<String> entries = new ArrayList<>()
         File tempMergingDir = new File(name + "-Uniform.jar-merging")
-        clone(new File(name + ".jar"), tempMergingDir, entries)
-        clone(new File("Forge/" + name + ".jar"), tempMergingDir, entries)
-
-        File outputFile = new File(name + "-Uniform.jar")
+        print(project.buildDir.path + name + ".jar")
+        clone(new File(project.buildDir.path + name + ".jar"), tempMergingDir, entries)
+        //more automation of subproject stuff
+        subprojects.forEach({project ->
+            print("Clone Subproject Jar From: " + project.buildDir.path + "\n")
+            clone(new File(project.buildDir.path + name + ".jar"), tempMergingDir, entries)
+        })
+        File outputFile = new File("build/" + name + "-Uniform.jar")
         outputFile.createNewFile()
         ZipOutputStream output = new ZipOutputStream(new FileOutputStream(outputFile))
+        //write all the collected files into a uniform jar
         for (String entry : entries) {
             output.putNextEntry(new ZipEntry(entry))
             InputStream stream = new FileInputStream(tempMergingDir.path + "/" + entry)
@@ -122,6 +128,7 @@ task uniformJar() {
     }
 }
 
+//copies all entries in the zip file it's being used on to the targeted folder
 void clone(File srcZip, File targ, ArrayList<String> entries) {
     File file = srcZip
     ZipFile file1 = new ZipFile(file)
@@ -129,8 +136,6 @@ void clone(File srcZip, File targ, ArrayList<String> entries) {
     mergingFile.mkdirs()
     for (ZipEntry entry : file1.stream().iterator()) {
         ZipEntry entry1 = entry
-        print("entry: " + entry1 + "\n")
-        print("entry: " + entry1.name + "\n")
         if (entry.isDirectory()) continue
         if (!entries.contains(entry1.name)) entries.add(entry1.name)
         InputStream stream = file1.getInputStream(entry1)
@@ -138,8 +143,8 @@ void clone(File srcZip, File targ, ArrayList<String> entries) {
         stream.read(bytes)
         stream.close()
         File file2 = new File(targ.path + "/" + entry1.name);
-        print("Copy File With Name: " + file2.name + "\n")
-        print("Target: " + file2.path + "\n")
+        print("|Copy File With Name: " + file2.name + "\n")
+        print("|Target: " + file2.path + "\n")
         file2.getParentFile().mkdirs()
         file2.createNewFile()
         FileOutputStream stream1 = new FileOutputStream(file2)
