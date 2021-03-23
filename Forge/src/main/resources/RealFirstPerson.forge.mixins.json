@@ -1,0 +1,19 @@
+{
+  "required": false,
+  "package": "com.tfc.realfirstperson.forge.mixins",
+  "compatibilityLevel": "JAVA_8",
+  "refmap": "realfirstperson.forge.refmap.json",
+  "client": [
+    "CameraMixin",
+    "WorldRendererMixin",
+    "ArmorRendererMixin",
+    "PlayerRendererMixin",
+    "CameraAccessor"
+  ],
+  "mixins": [
+  ],
+  "injectors": {
+    "defaultRequire": 0
+  },
+  "minVersion": "0.8"
+}
